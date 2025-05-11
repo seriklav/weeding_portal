@@ -298,8 +298,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.editable-name').forEach(function (element) {
-                element.addEventListener('click', function () {
+            document.querySelectorAll('.editable-name').forEach(attachEditHandler);
+
+            function attachEditHandler(span) {
+                span.addEventListener('click', function () {
                     const id = this.dataset.id;
                     const currentText = this.textContent.trim();
 
@@ -316,6 +318,14 @@
                     input.addEventListener('blur', function () {
                         const newName = input.value.trim();
 
+                        const newSpan = document.createElement('span');
+                        newSpan.className = 'editable-name';
+                        newSpan.dataset.id = id;
+                        newSpan.textContent = newName || currentText;
+
+                        input.replaceWith(newSpan);
+                        attachEditHandler(newSpan);
+
                         if (newName && newName !== currentText) {
                             fetch(`/people/${id}/name`, {
                                 method: 'POST',
@@ -327,35 +337,13 @@
                             })
                                 .then(response => response.json())
                                 .then(data => {
-                                    const span = document.createElement('span');
-                                    span.className = 'editable-name';
-                                    span.dataset.id = id;
-                                    span.textContent = newName;
-                                    input.replaceWith(span);
-                                    attachEditHandler(span);
-
-                                    // Обновление статистики
                                     document.getElementById('total-count').textContent = data.stats.total + ' осіб';
                                     document.getElementById('confirmed-count').textContent = data.stats.confirmed + ' осіб';
                                     document.getElementById('declined-count').textContent = data.stats.declined + ' осіб';
                                     document.getElementById('pending-count').textContent = data.stats.pending + ' осіб';
                                 });
-                        } else {
-                            const span = document.createElement('span');
-                            span.className = 'editable-name';
-                            span.dataset.id = id;
-                            span.textContent = currentText;
-                            input.replaceWith(span);
-                            attachEditHandler(span);
                         }
                     });
-                });
-            });
-
-            function attachEditHandler(span) {
-                span.addEventListener('click', function () {
-                    const clickEvent = new MouseEvent('click');
-                    span.dispatchEvent(clickEvent);
                 });
             }
         });
