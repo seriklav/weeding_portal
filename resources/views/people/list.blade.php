@@ -151,13 +151,21 @@
             const tableId = document.getElementById('tableFilter').value;
 
             const rows = document.querySelectorAll('table tbody tr');
+            let visibleIndex = 1;
+
             rows.forEach(row => {
                 const statusMatch = status === 'all' || row.getAttribute('data-status') === status;
                 const tableMatch = tableId === 'all' ||
                     (tableId === 'none' && !row.querySelector('.badge.bg-info')) ||
                     (row.querySelector(`.badge[data-table-id="${tableId}"]`));
 
-                row.style.display = statusMatch && tableMatch ? '' : 'none';
+                const shouldShow = statusMatch && tableMatch;
+                row.style.display = shouldShow ? '' : 'none';
+
+                if (shouldShow) {
+                    const numberCell = row.querySelector('td');
+                    if (numberCell) numberCell.textContent = visibleIndex++;
+                }
             });
         }
 
