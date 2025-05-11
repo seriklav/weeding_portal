@@ -86,7 +86,7 @@
                 <tbody>
                     @foreach($people as $person)
                     <tr data-status="{{ $person->status }}">
-                        <td>{{ $person->name }}</td>
+                        <td><span class="editable-name" data-id="{{ $person->id }}">{{ $person->name }}</span></td>
                         <td>
                             <div class="input-group input-group-sm">
                                 <button class="btn btn-outline-secondary" type="button"
@@ -148,14 +148,14 @@
         function applyFilters() {
             const status = document.getElementById('statusFilter').value;
             const tableId = document.getElementById('tableFilter').value;
-            
+
             const rows = document.querySelectorAll('table tbody tr');
             rows.forEach(row => {
                 const statusMatch = status === 'all' || row.getAttribute('data-status') === status;
-                const tableMatch = tableId === 'all' || 
+                const tableMatch = tableId === 'all' ||
                     (tableId === 'none' && !row.querySelector('.badge.bg-info')) ||
                     (row.querySelector(`.badge[data-table-id="${tableId}"]`));
-                
+
                 row.style.display = statusMatch && tableMatch ? '' : 'none';
             });
         }
@@ -295,5 +295,70 @@
             font-size: 0.875rem;
         }
     </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.editable-name').forEach(function (element) {
+                element.addEventListener('click', function () {
+                    const id = this.dataset.id;
+                    const currentText = this.textContent.trim();
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentText;
+                    input.className = 'form-control form-control-sm';
+                    input.style.width = 'auto';
+                    input.style.display = 'inline-block';
+
+                    this.replaceWith(input);
+                    input.focus();
+
+                    input.addEventListener('blur', function () {
+                        const newName = input.value.trim();
+
+                        if (newName && newName !== currentText) {
+                            fetch(`/people/${id}/name`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({ name: newName })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    const span = document.createElement('span');
+                                    span.className = 'editable-name';
+                                    span.dataset.id = id;
+                                    span.textContent = newName;
+                                    input.replaceWith(span);
+                                    attachEditHandler(span);
+
+                                    // Обновление статистики
+                                    document.getElementById('total-count').textContent = data.stats.total + ' осіб';
+                                    document.getElementById('confirmed-count').textContent = data.stats.confirmed + ' осіб';
+                                    document.getElementById('declined-count').textContent = data.stats.declined + ' осіб';
+                                    document.getElementById('pending-count').textContent = data.stats.pending + ' осіб';
+                                });
+                        } else {
+                            const span = document.createElement('span');
+                            span.className = 'editable-name';
+                            span.dataset.id = id;
+                            span.textContent = currentText;
+                            input.replaceWith(span);
+                            attachEditHandler(span);
+                        }
+                    });
+                });
+            });
+
+            function attachEditHandler(span) {
+                span.addEventListener('click', function () {
+                    const clickEvent = new MouseEvent('click');
+                    span.dispatchEvent(clickEvent);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

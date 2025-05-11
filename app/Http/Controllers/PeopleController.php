@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\People;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\JsonResponse;
 
@@ -19,7 +20,7 @@ class PeopleController extends Controller
     public function download($id)
     {
         $person = People::query()->findOrFail($id);
-        
+
         $files = [
             public_path('photos/' . $person->id . '/1.png'),
             public_path('layout/2.png'),
@@ -98,6 +99,24 @@ class PeopleController extends Controller
         }
 
         $person->update(['status' => $newStatus]);
+
+        return response()->json([
+            'success' => true,
+            'stats' => [
+                'total' => People::sum('people_count'),
+                'confirmed' => People::where('status', People::STATUS_CONFIRMED)->sum('people_count'),
+                'declined' => People::where('status', People::STATUS_DECLINED)->sum('people_count'),
+                'pending' => People::where('status', People::STATUS_PENDING)->sum('people_count'),
+            ]
+        ]);
+    }
+
+    public function updatePeopleName($id): JsonResponse
+    {
+        $person = People::query()->findOrFail($id);
+        $newName = request('name');
+
+        $person->update(['name' => $newName]);
 
         return response()->json([
             'success' => true,
