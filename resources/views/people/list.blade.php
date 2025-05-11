@@ -84,8 +84,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($people as $person)
+                    @foreach($people as $key => $person)
                     <tr data-status="{{ $person->status }}">
+                        <td>{{ $key + 1 }}</td>
                         <td><span class="editable-name" data-id="{{ $person->id }}">{{ $person->name }}</span></td>
                         <td>
                             <div class="input-group input-group-sm">
